@@ -1,1 +1,36 @@
-<a>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/callapp-lib@1.7.3/dist/index.umd.min.js"></script>
+</head>
+<body>
+    <script>
+        //1.
+        const weixinOpt = {
+            protocol: 'weixin://',
+            intent: {
+                package: 'com.tencent.mm',
+                scheme: 'weixin://'
+            },
+            appstore: 'https://itunes.apple.com/cn/app/id414478124',
+            yingyongbao: 'https://a.app.qq.com/o/simple.jsp?pkgname=com.tencent.mm',
+            // fallback: location.origin
+            fallback: 'https://a.app.qq.com/o/simple.jsp?pkgname=com.tencent.mm'
+        };
+
+        //2.
+
+        const weixinApp = new CallApp(weixinOpt);
+
+        //3.
+        weixinApp.open({
+            path: '',
+            param: {},
+        });
+    </script>
+</body>
+</html>
