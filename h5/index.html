@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <style>
+        td {
+            width: 10px;
+            height: 10px;
+            /* border: 1px solid red; */
+            background-color: red;
+        }
+        #startbtn {
+            width: 100px;
+            height: 40px;
+            margin-left: calc(50% - 50px);
+        }
+        #myselect {
+            width: 100px;
+            height: 40px;
+            margin-left: calc(50% - 50px);
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- <div>
+        <table id="testtable"></table>
+    </div> -->
+    
+    <canvas id="myCanvas" width="1600" height="1800"></canvas>
+    <select id="myselect">
+        <option value ="1">1</option>
+        <option value ="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+    </select>
+    <button id="startbtn">开始</button>
+    <script>
+        // x [0, 50 + 2y]
+        // y [0, 25]
+
+        const MAX_ROW = 26;
+        const BEI = 4;
+        const STEP = 2 * BEI;
+        const FIRST_ROW_LEN = 50 * BEI;
+        const LAST_ROW_LEN = FIRST_ROW_LEN + (MAX_ROW - 1) * STEP;
+        const MIN_X = 0;
+        const MIN_Y = 0;
+        const MAX_Y = MAX_ROW - 1;
+        const MAX_X = FIRST_ROW_LEN;
+        let CANDIATE_EACH_ROUND = 5;
+        const TOTAL_LEN = (FIRST_ROW_LEN + LAST_ROW_LEN) * MAX_ROW / 2;
+        const MAX_NINDEX = TOTAL_LEN - 1;
+        const RADIUS = 600;//半径
+        const THETA = 6 * Math.PI / 180;//弧度度
+        const TOTAL_ANGLE = 120;
+        const LINE_WIDTH = 5;
+        const DRAW_STEP = 10 + LINE_WIDTH;
+        let resultIndex = new Array(TOTAL_LEN).fill(0);
+        let candidateIndex = resultIndex.map((item, i) => {
+            return i
+        })
+        function getIndexFromPosition (x = 0, y = 0) {
+            if (x < MIN_X || x > MAX_X || y < MIN_Y || y > MAX_Y) {
+                return 0;
+            }
+            if (y === MIN_Y) {
+                return x;
+            }
+            return (FIRST_ROW_LEN + FIRST_ROW_LEN + STEP * (y - 1)) * y / 2 + x;
+        }
+
+        function getPositionFromIndex (nIndex = 0, basiclen = FIRST_ROW_LEN, step = STEP, mod = 0) {
+            if (basiclen <= 0) {
+                return 0;
+            }
+            mod = mod + 1;
+            let left = nIndex - basiclen;
+            basiclen = basiclen + step
+            if (left <= 0) {
+                return [nIndex - 1, mod - 1];
+            } else if (left > basiclen) {
+                return getPositionFromIndex(left, basiclen, step, mod);
+            } else {
+                return [left - 1, mod];
+            }
+        }
+        // for (let i = 0; i< TOTAL_LEN; i++) {
+        //     let [a, b] = getPositionFromIndex(i + 1, FIRST_ROW_LEN, STEP)
+        //     console.log([b, a]);
+        // }
+
+        /**
+         * 随机产生 [min-max]之间的整数，还需检查一下参数合法性
+         * 
+         **/
+        function getRandomIntInclusive(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive 
+        }
+
+        /**
+         * 随机产生N个 [min-max]之间的整数
+         * 
+         **/
+        function getNRandomIntInclusive(min, max, n, cb = () => {}) {
+            let result = []
+            while (result.length < n) {
+                let index = this.getRandomIntInclusive(min, max)
+                if (result.indexOf(index) === -1) {
+                    result.push(index);
+                    cb && cb(index);
+                } 
+            }
+            return result
+        }
+        function getNRandomRealIndexInclusive(min, max, n, cb = () => {}) {
+            let result = []
+            while (result.length < n) {
+                let index = this.getRandomIntInclusive(min, max)
+                if (result.indexOf(index) === -1) {
+                    result.push(candidateIndex[index]);
+                    cb && cb(index);
+                } 
+            }
+            return result
+        }
+
+        function round () {
+            let candidates = [];
+            let positions = [];
+            if (candidateIndex.length <= 0) {
+                return {
+                    positions,
+                    candidates
+                } 
+            }
+            if (candidateIndex.length < CANDIATE_EACH_ROUND) {
+                alert(`剩余座位不足${CANDIATE_EACH_ROUND}, 将出票${CANDIATE_EACH_ROUND}张`);
+                candidates =  candidateIndex;
+            } else {
+                candidates = getNRandomRealIndexInclusive(0, candidateIndex.length -1, CANDIATE_EACH_ROUND, (index) => {
+                    candidateIndex.splice(index, 1);
+                });
+            }
+            positions = candidates.map((item) => {
+                return getPositionFromIndex(item)
+            });
+            console.log('candidates', candidates);
+            console.log('positions', positions);
+            return {
+                positions,
+                candidates
+            }
+        }
+        console.log('test', round())
+        function getTdStr () {
+            let str = '';
+            for (let i = 0; i <= MAX_Y; i++) {
+                str += '<tr>';
+                for (let j = 0; j < i * 2 + FIRST_ROW_LEN; j++) {
+                    // result.push([i, j])
+                    // result.push(getIndexFromPosition(j, i))
+                    str += `<td id="${j + '-' + i}"></td>`
+                }
+                str += '</tr>'
+                // console.log('result', result)
+            }
+            return str;
+        }
+        // console.log(getTdStr())
+        // $('#testtable').html(getTdStr())
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+
+
+
+        // theta
+        function getTheta(y) {
+            let total = FIRST_ROW_LEN + STEP * y;
+            return Math.PI * TOTAL_ANGLE / 180 / (total + 1)
+        }
+        function drawArc (radius, start, end, color = '#FFC0CB') {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = LINE_WIDTH;
+            ctx.arc(600, 600, radius, start, end);
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        for (let j = 0; j < MAX_ROW; j++) {
+            let theta = getTheta(j);
+            let radius = RADIUS + j * DRAW_STEP
+            for (let i= 0; i < FIRST_ROW_LEN + STEP * j; i ++) { 
+                drawArc(radius, i * theta, (i + 1) * theta, getColor(i, j))
+            }
+        }
+        function getColor (x, y) {
+            let max = FIRST_ROW_LEN + y * STEP;
+            let stop = Math.floor(max / 4);
+            let a_stop = stop;
+            let b_stop = stop * 2;
+            let c_stop = stop * 3;
+            let d_stop = stop * 4;
+            if (x >= 0 && x < a_stop) {
+                return '#FFC0CB'
+            } else if (x >= a_stop && x < b_stop) {
+                return '#87CEFA'
+            } else if (x >= b_stop && x < c_stop) {
+                return '#FF4500'
+            } else {
+                return '#FFD700'
+            }
+        }
+
+        $('#startbtn').on('click', function () {
+            let count = Number.parseInt($('#myselect').val());
+            console.log('count', count)
+            CANDIATE_EACH_ROUND = count;
+            let {positions = [], candidates = []} = round();
+            if (positions.length === 0) {
+                alert(`已无票`);
+            }
+            for (let [x, y] of positions) {
+                // let dom = $(`#${x + '-' + y}`);
+                // console.log(`#${x + '-' + y}`)
+                // dom.css('backgroundColor', 'gray');
+                let theta = getTheta(y);
+                let radius = RADIUS + y * 15
+                drawArc(radius, x * theta, (x + 1) * theta, '#000')
+            }
+            
+        })
+    </script>
+</body>
+</html>
